@@ -62,6 +62,45 @@ git push -u origin main
 1. Wait a few minutes for GitHub Pages to build
 2. Visit `https://YOUR_USERNAME.github.io/SecureLogRedactor`
 
+## Automatic Deployment
+
+This project uses GitHub Actions for automatic deployment. Every time you push to the `main` branch, your changes will be automatically deployed to GitHub Pages.
+
+### How it Works
+
+1. The workflow is defined in `.github/workflows/deploy.yml`
+2. When you push to `main`, GitHub Actions:
+   - Checks out your code
+   - Sets up GitHub Pages
+   - Uploads your site content
+   - Deploys to GitHub Pages
+
+### Making Changes
+
+Simply push your changes to the `main` branch:
+```bash
+# Make your changes
+git add .
+git commit -m "Description of changes"
+git push origin main
+```
+
+The site will automatically update within a few minutes.
+
+### Monitoring Deployments
+
+1. Go to your repository on GitHub
+2. Click the "Actions" tab
+3. You'll see all deployment runs and their status
+
+### Troubleshooting Automatic Deployment
+
+If deployment fails:
+1. Check the Actions tab for error messages
+2. Verify your repository settings
+3. Ensure your files are in the correct location (src/ directory)
+4. Check if you have the necessary permissions
+
 ## Maintenance and Updates
 
 ### Making Changes

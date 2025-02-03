@@ -331,6 +331,37 @@
         .export-options a:hover {
             background-color: #f1f1f1;
         }
+
+        .status-message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .status-message.info {
+            background-color: #e3f2fd;
+            border: 1px solid #bbdefb;
+            color: #1976d2;
+        }
+
+        .status-message.warning {
+            background-color: #fff3e0;
+            border: 1px solid #ffe0b2;
+            color: #f57c00;
+        }
+
+        .status-message.error {
+            background-color: #ffebee;
+            border: 1px solid #ffcdd2;
+            color: #c62828;
+        }
+
+        .status-message.success {
+            background-color: #e8f5e9;
+            border: 1px solid #c8e6c9;
+            color: #2e7d32;
+        }
     </style>
 </head>
 <body>
@@ -348,7 +379,8 @@
                 <input type="file" id="logFile" accept=".log,.txt" aria-label="Choose a log file to process" style="display: none;">
             </label>
             <div id="fileInfo" class="file-info" aria-live="polite"></div>
-            <div id="errorMessage" class="error-message" role="alert"></div>
+            <div id="statusMessage" class="status-message" style="display: none;"></div>
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
         </div>
 
         <div class="redaction-controls">
@@ -515,17 +547,37 @@
             }, 5000);
         }
 
+        // Error handling and status functions
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = `status-message ${type}`;
+            statusDiv.style.display = 'block';
+            console.log(`Status [${type}]:`, message);
+        }
+
+        function showError(error) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = error.message || 'An error occurred';
+            errorDiv.style.display = 'block';
+            console.error('Error:', error);
+        }
+
         // File handling
         document.getElementById('logFile').addEventListener('change', async function(event) {
-            const file = event.target.files[0];
-            const fileInfo = document.getElementById('fileInfo');
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            const errorMessage = document.getElementById('errorMessage');
-            
-            errorMessage.style.display = 'none';
-            fileInfo.textContent = '';
-
             try {
+                const file = event.target.files[0];
+                if (!file) {
+                    throw new Error('No file selected');
+                }
+                showStatus('Processing file: ' + file.name);
+                const fileInfo = document.getElementById('fileInfo');
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                const errorMessage = document.getElementById('errorMessage');
+                
+                errorMessage.style.display = 'none';
+                fileInfo.textContent = '';
+
                 validateFile(file);
                 loadingOverlay.style.display = 'flex';
                 fileInfo.textContent = `Processing ${file.name}...`;
@@ -542,7 +594,7 @@
                         // Expand the output section
                         document.getElementById('output-section').classList.add('expanded');
                     } catch (error) {
-                        showError(error.message);
+                        showError(error);
                     } finally {
                         loadingOverlay.style.display = 'none';
                     }
@@ -555,7 +607,7 @@
 
                 reader.readAsText(file);
             } catch (error) {
-                showError(error.message);
+                showError(error);
             }
         });
 
@@ -878,6 +930,19 @@
                 processText();
             }
         });
+
+        // Add connection status check
+        function checkConnection() {
+            if (!navigator.onLine) {
+                showStatus('You are offline. Some features may not work.', 'warning');
+            }
+        }
+
+        window.addEventListener('online', () => showStatus('Connection restored', 'success'));
+        window.addEventListener('offline', () => showStatus('Connection lost', 'warning'));
+
+        // Initial connection check
+        checkConnection();
     </script>
 </body>
 </html>
