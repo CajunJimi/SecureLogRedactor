@@ -106,3 +106,40 @@ Check GitHub Pages settings:
 2. Verify custom domain configuration
 3. Check HTTPS enforcement
 4. Verify GitHub Actions deployment status
+
+## 2025-02-03 19:24:56Z - Fixed Redaction Functionality
+
+### Issue Description
+Redaction functionality was not working due to missing redaction type checkboxes and incorrect checkbox IDs in the HTML.
+
+### Changes Made
+1. Added redaction type checkboxes for:
+   - IPv4 and IPv6 addresses
+   - Domain names and hostnames
+   - File paths and share names
+   - Security IDs (SIDs)
+   - Account names
+   - GUIDs and unique identifiers
+   - Kerberos tickets
+   - MAC addresses
+   - Cloud credentials
+   - JWT tokens
+   - Base64 encoded data
+   - Email addresses
+
+2. Fixed checkbox IDs to match the JavaScript processing logic
+3. Added preview mode toggle
+4. Ensured all checkboxes are checked by default
+
+### Testing Steps
+1. Upload a log file containing sensitive data
+2. Verify all redaction type checkboxes are checked
+3. Test both redaction modes:
+   - [REDACTED] placeholders
+   - Dummy data replacement
+4. Test preview mode to highlight sensitive data
+
+### Outcome
+- Redaction functionality now working correctly
+- All sensitive data types being properly identified and redacted
+- Preview mode functioning as expected

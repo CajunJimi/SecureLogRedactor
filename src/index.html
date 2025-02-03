@@ -362,6 +362,27 @@
             border: 1px solid #c8e6c9;
             color: #2e7d32;
         }
+
+        .sensitive-data {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 2px;
+            border: 1px solid #ffeeba;
+            position: relative;
+        }
+        .sensitive-data:hover::after {
+            content: attr(data-type);
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -811,12 +832,56 @@
             const previewMode = document.getElementById('previewMode').checked;
             const useDummyData = document.getElementById('redactionMode').checked;
 
+            try {
+                // Try to parse as JSON first
+                const isJson = chunk.trim().startsWith('{') && chunk.trim().endsWith('}');
+                if (isJson) {
+                    const jsonObj = JSON.parse(chunk);
+                    
+                    // Process each field in the JSON object
+                    const processJsonValue = (value) => {
+                        if (typeof value === 'string') {
+                            let processedValue = value;
+                            Object.entries(REGEX_PATTERNS).forEach(([type, regex]) => {
+                                const checkbox = document.getElementById(`redact${type.charAt(0).toUpperCase() + type.slice(1)}`);
+                                if (checkbox && checkbox.checked) {
+                                    processedValue = processedValue.replace(regex, match => {
+                                        if (previewMode) {
+                                            return `<mark class="sensitive-data" data-type="${type}">${match}</mark>`;
+                                        }
+                                        return useDummyData ? 
+                                            dummyData[`generate${type.charAt(0).toUpperCase() + type.slice(1)}`]() : 
+                                            `[REDACTED-${type.toUpperCase()}]`;
+                                    });
+                                }
+                            });
+                            return processedValue;
+                        } else if (Array.isArray(value)) {
+                            return value.map(item => processJsonValue(item));
+                        } else if (typeof value === 'object' && value !== null) {
+                            const processed = {};
+                            Object.entries(value).forEach(([k, v]) => {
+                                processed[k] = processJsonValue(v);
+                            });
+                            return processed;
+                        }
+                        return value;
+                    };
+
+                    const processedJson = processJsonValue(jsonObj);
+                    return JSON.stringify(processedJson, null, 2);
+                }
+            } catch (e) {
+                console.log('Not valid JSON, processing as plain text');
+            }
+
+            // Process as plain text if not JSON
             Object.entries(REGEX_PATTERNS).forEach(([type, regex]) => {
                 const checkbox = document.getElementById(`redact${type.charAt(0).toUpperCase() + type.slice(1)}`);
                 if (checkbox && checkbox.checked) {
                     processedChunk = processedChunk.replace(regex, match => {
                         if (previewMode) {
-                            return `<span class="preview-highlight" title="Detected ${type}">${match}</span>`;
+                            return `<mark class="sensitive-data" data-type="${type}">${match}</mark>`;
                         }
                         return useDummyData ? 
                             dummyData[`generate${type.charAt(0).toUpperCase() + type.slice(1)}`]() : 
