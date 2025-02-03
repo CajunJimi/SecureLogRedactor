@@ -435,10 +435,6 @@
                     <label for="redactDomain">Domain Names & Hostnames</label>
                 </div>
                 <div class="redaction-type">
-                    <input type="checkbox" id="redactPath" checked>
-                    <label for="redactPath">File Paths & Share Names</label>
-                </div>
-                <div class="redaction-type">
                     <input type="checkbox" id="redactSid" checked>
                     <label for="redactSid">Security IDs (SIDs)</label>
                 </div>
@@ -725,13 +721,9 @@
             ipv4: /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/g,
             ipv6: /\b(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}\b|::1\b/gi,
             domain: /\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:local|com|org|net|edu|gov|mil|biz|info|mobi|name|aero|asia|jobs|museum)\b/gi,
-            windowsPath: /(?:[A-Za-z]:\\(?:[^\\\/\s]+\\)*[^\\\/\s]*)/g,
-            unixPath: /(?:\/(?:[^\/\s]+\/)*[^\/\s]+)/g,
-            sharePath: /\\\\[^\\\/\s]+\\[^\\\/\s]+(?:\\[^\\\/\s]+)*/g,
             sid: /\bS-1-[0-9-]+\b/g,
             guid: /\{?[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}\}?/gi,
-            email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
-            base64: /\b[A-Za-z0-9+/]{32,}={0,2}\b/g
+            email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g
         };
 
         // Function to check if a string is a path
@@ -787,7 +779,6 @@
             'Ipv4': true,
             'Ipv6': true,
             'Domain': true,
-            'Path': true,
             'Sid': true,
             'Account': true,
             'Guid': true,
@@ -854,11 +845,6 @@
                             Object.entries(REGEX_PATTERNS).forEach(([type, regex]) => {
                                 const checkbox = document.getElementById(`redact${type.charAt(0).toUpperCase() + type.slice(1)}`);
                                 if (checkbox && checkbox.checked) {
-                                    // Skip path detection for non-path fields if it's not a clear path
-                                    if ((type === 'windowsPath' || type === 'unixPath' || type === 'sharePath') && !isPath(value)) {
-                                        return;
-                                    }
-                                    
                                     const typeMatches = [...processedValue.matchAll(regex)].map(match => ({
                                         type,
                                         match: match[0],
@@ -928,11 +914,6 @@
             Object.entries(REGEX_PATTERNS).forEach(([type, regex]) => {
                 const checkbox = document.getElementById(`redact${type.charAt(0).toUpperCase() + type.slice(1)}`);
                 if (checkbox && checkbox.checked) {
-                    // Skip path detection for non-path content
-                    if ((type === 'windowsPath' || type === 'unixPath' || type === 'sharePath') && !isPath(processedChunk)) {
-                        return;
-                    }
-                    
                     const typeMatches = [...processedChunk.matchAll(regex)].map(match => ({
                         type,
                         match: match[0],
