@@ -399,57 +399,65 @@
                 </div>
             </div>
 
-            <div class="redaction-type">
-                <input type="checkbox" id="redactIPs" checked>
-                <label for="redactIPs">IP Addresses (IPv4 & IPv6)</label>
-            </div>
-            <div class="redaction-type">
-                <input type="checkbox" id="redactDomains" checked>
-                <label for="redactDomains">Domain Names & Hostnames</label>
-            </div>
-            <div class="redaction-type">
-                <input type="checkbox" id="redactPaths" checked>
-                <label for="redactPaths">File Paths & Share Names</label>
-            </div>
-            <div class="redaction-type">
-                <input type="checkbox" id="redactSIDs" checked>
-                <label for="redactSIDs">Security IDs (SIDs) & Account Names</label>
-            </div>
-            <div class="redaction-type">
-                <input type="checkbox" id="redactGUIDs" checked>
-                <label for="redactGUIDs">GUIDs & Unique Identifiers</label>
-            </div>
-            <div class="redaction-type">
-                <input type="checkbox" id="redactKerberos" checked>
-                <label for="redactKerberos">Kerberos Tickets & Authentication Data</label>
+            <div class="redaction-types">
+                <h4>Information Types to Redact</h4>
+                <div class="redaction-type">
+                    <input type="checkbox" id="redactIpv4" checked>
+                    <label for="redactIpv4">IPv4 Addresses</label>
+                </div>
+                <div class="redaction-type">
+                    <input type="checkbox" id="redactIpv6" checked>
+                    <label for="redactIpv6">IPv6 Addresses</label>
+                </div>
+                <div class="redaction-type">
+                    <input type="checkbox" id="redactDomain" checked>
+                    <label for="redactDomain">Domain Names & Hostnames</label>
+                </div>
+                <div class="redaction-type">
+                    <input type="checkbox" id="redactPath" checked>
+                    <label for="redactPath">File Paths & Share Names</label>
+                </div>
+                <div class="redaction-type">
+                    <input type="checkbox" id="redactSid" checked>
+                    <label for="redactSid">Security IDs (SIDs)</label>
+                </div>
+                <div class="redaction-type">
+                    <input type="checkbox" id="redactAccount" checked>
+                    <label for="redactAccount">Account Names</label>
+                </div>
+                <div class="redaction-type">
+                    <input type="checkbox" id="redactGuid" checked>
+                    <label for="redactGuid">GUIDs & Unique Identifiers</label>
+                </div>
+                <div class="redaction-type">
+                    <input type="checkbox" id="redactKerberos" checked>
+                    <label for="redactKerberos">Kerberos Tickets</label>
+                </div>
+                <div class="redaction-type">
+                    <input type="checkbox" id="redactMac" checked>
+                    <label for="redactMac">MAC Addresses</label>
+                </div>
+                <div class="redaction-type">
+                    <input type="checkbox" id="redactCloudCreds" checked>
+                    <label for="redactCloudCreds">Cloud Credentials</label>
+                </div>
+                <div class="redaction-type">
+                    <input type="checkbox" id="redactJwt" checked>
+                    <label for="redactJwt">JWT Tokens</label>
+                </div>
+                <div class="redaction-type">
+                    <input type="checkbox" id="redactBase64" checked>
+                    <label for="redactBase64">Base64 Encoded Data</label>
+                </div>
+                <div class="redaction-type">
+                    <input type="checkbox" id="redactEmail" checked>
+                    <label for="redactEmail">Email Addresses</label>
+                </div>
             </div>
 
-            <!-- Preview Mode Toggle -->
-            <div class="redaction-type">
+            <div class="preview-mode">
                 <input type="checkbox" id="previewMode">
                 <label for="previewMode">Preview Mode (Highlight sensitive data)</label>
-            </div>
-
-            <!-- Additional Redaction Types -->
-            <div class="redaction-type">
-                <input type="checkbox" id="redactMAC" checked>
-                <label for="redactMAC">MAC Addresses</label>
-            </div>
-            <div class="redaction-type">
-                <input type="checkbox" id="redactCloudCreds" checked>
-                <label for="redactCloudCreds">Cloud Credentials</label>
-            </div>
-            <div class="redaction-type">
-                <input type="checkbox" id="redactJWT" checked>
-                <label for="redactJWT">JWT Tokens</label>
-            </div>
-            <div class="redaction-type">
-                <input type="checkbox" id="redactBase64" checked>
-                <label for="redactBase64">Base64 Encoded Secrets</label>
-            </div>
-            <div class="redaction-type">
-                <input type="checkbox" id="redactEmail" checked>
-                <label for="redactEmail">Email Addresses</label>
             </div>
         </div>
 
