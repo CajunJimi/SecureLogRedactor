@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureLog Redaction Tool</title>
+    <script src="https://unpkg.com/compromise@14.10.0"></script>
+    <style>
+        /* Basic reset and modern styling */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            padding: 20px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-size: 2.5rem;
+        }
+
+        .security-info {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        .redaction-controls {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+
+        .redaction-type {
+            margin: 10px 0;
+        }
+
+        .detected-items {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+        }
+
+        .section {
+            margin: 20px 0;
+        }
+
+        .section-header {
+            background-color: #f6f8fa;
+            padding: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+
+        .section-header:hover {
+            background-color: #f0f2f5;
+        }
+
+        .section-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background-color: white;
+        }
+
+        .section-content.expanded {
+            max-height: 500px;
+            overflow: auto;
+        }
+
+        .text-area-container {
+            padding: 10px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            resize: vertical;
+            margin-bottom: 1rem;
+        }
+
+        .button-group {
+            margin-top: 10px;
+        }
+
+        .button-group button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .button-group button:hover {
+            background-color: #2980b9;
+        }
+
+        .toggle-icon {
+            transition: transform 0.3s;
+        }
+
+        .expanded .toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        .file-section {
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .file-label {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #3498db;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .file-label:hover, .file-label:focus {
+            background-color: #2980b9;
+        }
+
+        .file-info {
+            margin-top: 1rem;
+            color: #666;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            color: #e74c3c;
+            margin: 1rem 0;
+            padding: 0.5rem;
+            background-color: #fde8e8;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .redaction-mode {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e3f2fd;
+            border-radius: 5px;
+            border: 1px solid #bbdefb;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+            margin-left: 10px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .mode-label {
+            display: inline-block;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        .preview-highlight {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 2px;
+            cursor: help;
+        }
+
+        .toolbar {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar button {
+            padding: 5px 10px;
+            background-color: #e9ecef;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .toolbar button:hover {
+            background-color: #dee2e6;
+        }
+
+        .toolbar button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #4CAF50;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .export-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .export-options {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 4px;
+        }
+
+        .export-options a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .export-options a:hover {
+            background-color: #f1f1f1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SecureLog Redaction Tool</h1>
+        <div class="security-info">
+            <h3>Security Information</h3>
+            <p>This tool helps redact sensitive information from logs before processing. All processing is done locally in your browser.</p>
+        </div>
+
+        <!-- File Upload Section -->
+        <div class="file-section">
+            <label for="logFile" class="file-label" role="button" tabindex="0">
+                Choose a log file to process
+                <input type="file" id="logFile" accept=".log,.txt" aria-label="Choose a log file to process" style="display: none;">
+            </label>
+            <div id="fileInfo" class="file-info" aria-live="polite"></div>
+            <div id="errorMessage" class="error-message" role="alert"></div>
+        </div>
+
+        <div class="redaction-controls">
+            <h3>Redaction Settings</h3>
+            
+            <div class="redaction-mode">
+                <h4>Redaction Mode</h4>
+                <div class="mode-label">Redacted Text</div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="redactionMode">
+                    <span class="slider"></span>
+                </label>
+                <div class="mode-label">Dummy Data</div>
+                <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                    Toggle between [REDACTED] placeholders and realistic-looking dummy data
+                </div>
+            </div>
+
+            <div class="redaction-type">
+                <input type="checkbox" id="redactIPs" checked>
+                <label for="redactIPs">IP Addresses (IPv4 & IPv6)</label>
+            </div>
+            <div class="redaction-type">
+                <input type="checkbox" id="redactDomains" checked>
+                <label for="redactDomains">Domain Names & Hostnames</label>
+            </div>
+            <div class="redaction-type">
+                <input type="checkbox" id="redactPaths" checked>
+                <label for="redactPaths">File Paths & Share Names</label>
+            </div>
+            <div class="redaction-type">
+                <input type="checkbox" id="redactSIDs" checked>
+                <label for="redactSIDs">Security IDs (SIDs) & Account Names</label>
+            </div>
+            <div class="redaction-type">
+                <input type="checkbox" id="redactGUIDs" checked>
+                <label for="redactGUIDs">GUIDs & Unique Identifiers</label>
+            </div>
+            <div class="redaction-type">
+                <input type="checkbox" id="redactKerberos" checked>
+                <label for="redactKerberos">Kerberos Tickets & Authentication Data</label>
+            </div>
+
+            <!-- Preview Mode Toggle -->
+            <div class="redaction-type">
+                <input type="checkbox" id="previewMode">
+                <label for="previewMode">Preview Mode (Highlight sensitive data)</label>
+            </div>
+
+            <!-- Additional Redaction Types -->
+            <div class="redaction-type">
+                <input type="checkbox" id="redactMAC" checked>
+                <label for="redactMAC">MAC Addresses</label>
+            </div>
+            <div class="redaction-type">
+                <input type="checkbox" id="redactCloudCreds" checked>
+                <label for="redactCloudCreds">Cloud Credentials</label>
+            </div>
+            <div class="redaction-type">
+                <input type="checkbox" id="redactJWT" checked>
+                <label for="redactJWT">JWT Tokens</label>
+            </div>
+            <div class="redaction-type">
+                <input type="checkbox" id="redactBase64" checked>
+                <label for="redactBase64">Base64 Encoded Secrets</label>
+            </div>
+            <div class="redaction-type">
+                <input type="checkbox" id="redactEmail" checked>
+                <label for="redactEmail">Email Addresses</label>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <button onclick="undoRedaction()" id="undoBtn" disabled>Undo</button>
+            <button onclick="redoRedaction()" id="redoBtn" disabled>Redo</button>
+            <button onclick="copySelected()">Copy Selected</button>
+            <div class="export-dropdown">
+                <button onclick="toggleExportOptions()">Export Results</button>
+                <div class="export-options" id="exportOptions">
+                    <a href="#" onclick="exportResults('json')">Export as JSON</a>
+                    <a href="#" onclick="exportResults('csv')">Export as CSV</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-bar-fill" id="progressBarFill"></div>
+        </div>
+
+        <div class="section">
+            <div class="section-header" onclick="toggleSection('input')">
+                <h2>Input Log Data</h2>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="section-content" id="input-section">
+                <div class="text-area-container">
+                    <textarea id="input-text" placeholder="Paste your log data here..."></textarea>
+                    <div class="button-group">
+                        <button onclick="processText()">Process & Redact</button>
+                        <button onclick="clearInput()">Clear Input</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header" onclick="toggleSection('output')">
+                <h2>Processed Output</h2>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="section-content" id="output-section">
+                <div class="detected-items" id="detected-sensitive-info">
+                    <h4>Detected Sensitive Information:</h4>
+                    <ul id="sensitive-items-list"></ul>
+                </div>
+                <div class="text-area-container">
+                    <textarea id="output-text" readonly></textarea>
+                    <div class="button-group">
+                        <button onclick="downloadOutput()">Download Redacted Log</button>
+                        <button onclick="copyToClipboard()">Copy to Clipboard</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner" role="progressbar" aria-label="Processing file"></div>
+        <p>Processing...</p>
+    </div>
+
+    <script>
+        // Configuration constants
+        const CONFIG = {
+            MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
+            CHUNK_SIZE: 50000, // 50KB chunks
+            ALLOWED_EXTENSIONS: ['.log', '.txt']
+        };
+
+        // File validation
+        function validateFile(file) {
+            if (!file) {
+                throw new Error('Please select a file');
+            }
+
+            if (file.size > CONFIG.MAX_FILE_SIZE) {
+                throw new Error('File size exceeds 10MB limit');
+            }
+
+            const extension = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+            if (!CONFIG.ALLOWED_EXTENSIONS.includes(extension)) {
+                throw new Error('Invalid file type. Please upload .log or .txt files only');
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        // File handling
+        document.getElementById('logFile').addEventListener('change', async function(event) {
+            const file = event.target.files[0];
+            const fileInfo = document.getElementById('fileInfo');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            errorMessage.style.display = 'none';
+            fileInfo.textContent = '';
+
+            try {
+                validateFile(file);
+                loadingOverlay.style.display = 'flex';
+                fileInfo.textContent = `Processing ${file.name}...`;
+
+                const reader = new FileReader();
+
+                reader.onload = async function(e) {
+                    try {
+                        const log = e.target.result;
+                        document.getElementById('input-text').value = log;
+                        processText();
+                        fileInfo.textContent = `Successfully processed ${file.name}`;
+                        
+                        // Expand the output section
+                        document.getElementById('output-section').classList.add('expanded');
+                    } catch (error) {
+                        showError(error.message);
+                    } finally {
+                        loadingOverlay.style.display = 'none';
+                    }
+                };
+
+                reader.onerror = function() {
+                    showError('Error reading file');
+                    loadingOverlay.style.display = 'none';
+                };
+
+                reader.readAsText(file);
+            } catch (error) {
+                showError(error.message);
+            }
+        });
+
+        // Keyboard accessibility for file input label
+        document.querySelector('.file-label').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.click();
+            }
+        });
+
+        function toggleSection(sectionId) {
+            const section = document.getElementById(`${sectionId}-section`);
+            section.classList.toggle('expanded');
+        }
+
+        // Dummy data generators
+        const dummyData = {
+            generateIP: () => {
+                const ip = Array.from({length: 4}, () => Math.floor(Math.random() * 256)).join('.');
+                return `192.168.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}`;
+            },
+            generateIPv6: () => {
+                return Array.from({length: 8}, () => 
+                    Math.floor(Math.random() * 65536).toString(16).padStart(4, '0')
+                ).join(':');
+            },
+            generateDomain: () => {
+                const domains = ['example.com', 'test.local', 'internal.net', 'dev.org'];
+                const prefixes = ['srv', 'host', 'web', 'db', 'app'];
+                const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+                const domain = domains[Math.floor(Math.random() * domains.length)];
+                return `${prefix}-${Math.floor(Math.random() * 999)}.${domain}`;
+            },
+            generatePath: () => {
+                const paths = ['/var/log', '/etc', '/usr/local', 'C:\\Program Files', 'D:\\Data'];
+                const files = ['config.xml', 'data.db', 'app.log', 'system.dat'];
+                const path = paths[Math.floor(Math.random() * paths.length)];
+                const file = files[Math.floor(Math.random() * files.length)];
+                return `${path}\\${file}`;
+            },
+            generateSID: () => {
+                const parts = Array.from({length: 6}, () => Math.floor(Math.random() * 100000));
+                return `S-1-5-21-${parts.join('-')}`;
+            },
+            generateGUID: () => {
+                const hex = () => Math.floor(Math.random() * 16).toString(16);
+                const block = (len) => Array.from({length: len}, hex).join('');
+                return `${block(8)}-${block(4)}-${block(4)}-${block(4)}-${block(12)}`;
+            },
+            generateKerberos: () => {
+                const services = ['HTTP', 'MSSQL', 'LDAP'];
+                const service = services[Math.floor(Math.random() * services.length)];
+                return `krbtgt/${service}@EXAMPLE.COM`;
+            },
+            generateMAC: () => {
+                const mac = Array.from({length: 6}, () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join(':');
+                return mac;
+            },
+            generateCloudCreds: () => {
+                const providers = ['AWS', 'Azure', 'GCP'];
+                const provider = providers[Math.floor(Math.random() * providers.length)];
+                return `${provider} Access Key ID: ${Math.floor(Math.random() * 1000000000)}`;
+            },
+            generateJWT: () => {
+                const header = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
+                const payload = 'eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaGFuIjoiMjMwfQ';
+                const signature = 'SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
+                return `${header}.${payload}.${signature}`;
+            },
+            generateBase64: () => {
+                const base64 = 'VGhlIHF1aWNrIGJyb3duIGZveA==';
+                return base64;
+            },
+            generateEmail: () => {
+                const domains = ['example.com', 'test.local', 'internal.net', 'dev.org'];
+                const localParts = ['john', 'jane', 'admin', 'user'];
+                const domain = domains[Math.floor(Math.random() * domains.length)];
+                const localPart = localParts[Math.floor(Math.random() * localParts.length)];
+                return `${localPart}@${domain}`;
+            }
+        };
+
+        // Cache for compiled regex patterns
+        const REGEX_PATTERNS = {
+            ipv4: /\b(?:\d{1,3}\.){3}\d{1,3}\b/g,
+            ipv6: /\b(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}\b/gi,
+            domain: /\b(?:[a-z0-9]+\.)+[a-z]{2,}\b/gi,
+            path: /(?:[A-Za-z]:\\|\/)[^\s]*/g,
+            sid: /S-\d-\d+-(\d+-){1,14}\d+/g,
+            account: /(?:user|account):\s*\S+/gi,
+            guid: /\b[A-F0-9]{8}(?:-[A-F0-9]{4}){3}-[A-F0-9]{12}\b/gi,
+            kerberos: /\b(?:krbtgt|TGT|TGS):[^\s]*/gi,
+            mac: /\b([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})\b/g,
+            cloudCreds: /\b((?:AKIA|ASIA)[0-9A-Z]{16}|(?:aws)?_?(?:secret|access)_?key_?id)\b/gi,
+            jwt: /eyJ[A-Za-z0-9-_]+\.eyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+/g,
+            base64: /\b[A-Za-z0-9+/]{32,}={0,2}\b/g,
+            email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g
+        };
+
+        // Undo/Redo stacks
+        const undoStack = [];
+        const redoStack = [];
+        let currentText = '';
+
+        // Load saved preferences
+        function loadPreferences() {
+            try {
+                const savedPrefs = localStorage.getItem('redactionPreferences');
+                if (savedPrefs) {
+                    const prefs = JSON.parse(savedPrefs);
+                    Object.entries(prefs).forEach(([id, checked]) => {
+                        const element = document.getElementById(id);
+                        if (element) {
+                            element.checked = checked;
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading preferences:', error);
+            }
+        }
+
+        // Save preferences
+        function savePreferences() {
+            const prefs = {};
+            document.querySelectorAll('.redaction-type input[type="checkbox"]').forEach(checkbox => {
+                prefs[checkbox.id] = checkbox.checked;
+            });
+            localStorage.setItem('redactionPreferences', JSON.stringify(prefs));
+        }
+
+        // Initialize preferences
+        loadPreferences();
+        document.querySelectorAll('.redaction-type input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', savePreferences);
+        });
+
+        // Chunked processing
+        async function processInChunks(text, chunkSize = 50000) {
+            const chunks = [];
+            for (let i = 0; i < text.length; i += chunkSize) {
+                chunks.push(text.slice(i, i + chunkSize));
+            }
+
+            const progressBar = document.getElementById('progressBar');
+            const progressBarFill = document.getElementById('progressBarFill');
+            progressBar.style.display = 'block';
+
+            let processedText = '';
+            for (let i = 0; i < chunks.length; i++) {
+                const chunk = chunks[i];
+                // Process chunk
+                processedText += await processChunk(chunk);
+                // Update progress
+                const progress = ((i + 1) / chunks.length) * 100;
+                progressBarFill.style.width = `${progress}%`;
+                // Allow UI to update
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
+
+            progressBar.style.display = 'none';
+            return processedText;
+        }
+
+        async function processChunk(chunk) {
+            // Process the chunk with all enabled redaction types
+            let processedChunk = chunk;
+            const previewMode = document.getElementById('previewMode').checked;
+
+            for (const [type, regex] of Object.entries(REGEX_PATTERNS)) {
+                const checkbox = document.getElementById(`redact${type.charAt(0).toUpperCase() + type.slice(1)}`);
+                if (checkbox && checkbox.checked) {
+                    processedChunk = processedChunk.replace(regex, match => {
+                        if (previewMode) {
+                            return `<span class="preview-highlight" title="Detected ${type}">${match}</span>`;
+                        }
+                        return document.getElementById('redactionMode').checked ? 
+                            dummyData[`generate${type.charAt(0).toUpperCase() + type.slice(1)}`]() : 
+                            `[REDACTED-${type.toUpperCase()}]`;
+                    });
+                }
+            }
+
+            return processedChunk;
+        }
+
+        // Enhanced processText function
+        async function processText() {
+            const input = document.getElementById('input-text').value;
+            
+            // Input validation
+            if (input.length > 10000000) { // 10MB limit
+                showError('Input text is too large. Please reduce the size.');
+                return;
+            }
+
+            // Save for undo
+            undoStack.push(currentText);
+            redoStack.length = 0;
+            
+            const processedText = await processInChunks(input);
+            currentText = processedText;
+            
+            document.getElementById('output-text').value = processedText;
+            updateUndoRedoButtons();
+        }
+
+        // Undo/Redo functions
+        function undoRedaction() {
+            if (undoStack.length > 0) {
+                redoStack.push(currentText);
+                currentText = undoStack.pop();
+                document.getElementById('output-text').value = currentText;
+                updateUndoRedoButtons();
+            }
+        }
+
+        function redoRedaction() {
+            if (redoStack.length > 0) {
+                undoStack.push(currentText);
+                currentText = redoStack.pop();
+                document.getElementById('output-text').value = currentText;
+                updateUndoRedoButtons();
+            }
+        }
+
+        function updateUndoRedoButtons() {
+            document.getElementById('undoBtn').disabled = undoStack.length === 0;
+            document.getElementById('redoBtn').disabled = redoStack.length === 0;
+        }
+
+        // Copy selected text
+        function copySelected() {
+            const output = document.getElementById('output-text');
+            const selectedText = output.value.substring(output.selectionStart, output.selectionEnd);
+            if (selectedText) {
+                navigator.clipboard.writeText(selectedText).then(() => {
+                    alert('Selected text copied to clipboard!');
+                }).catch(err => {
+                    console.error('Failed to copy text:', err);
+                });
+            }
+        }
+
+        // Export functions
+        function toggleExportOptions() {
+            document.getElementById('exportOptions').style.display = 
+                document.getElementById('exportOptions').style.display === 'block' ? 'none' : 'block';
+        }
+
+        function exportResults(format) {
+            const detectedItems = {}; // Collect all detected items
+            let content;
+
+            if (format === 'json') {
+                content = JSON.stringify(detectedItems, null, 2);
+                downloadFile(content, 'detected_items.json', 'application/json');
+            } else if (format === 'csv') {
+                const csv = Object.entries(detectedItems)
+                    .map(([type, items]) => `${type},${items.join(',')}`)
+                    .join('\n');
+                downloadFile(csv, 'detected_items.csv', 'text/csv');
+            }
+        }
+
+        function downloadFile(content, filename, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+
+        // Error handling
+        function showError(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        function copyToClipboard() {
+            const outputText = document.getElementById('output-text');
+            outputText.select();
+            document.execCommand('copy');
+            alert('Copied to clipboard!');
+        }
+
+        function clearInput() {
+            document.getElementById('input-text').value = '';
+            document.getElementById('output-text').value = '';
+            document.getElementById('sensitive-items-list').innerHTML = '';
+        }
+
+        function downloadOutput() {
+            const outputText = document.getElementById('output-text').value;
+            if (outputText) {
+                const blob = new Blob([outputText], { type: 'text/plain' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'redacted_log.txt';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            }
+        }
+
+        // Add event listener for redaction mode toggle
+        document.getElementById('redactionMode').addEventListener('change', function() {
+            if (document.getElementById('input-text').value) {
+                processText();
+            }
+        });
+    </script>
+</body>
+</html>
