@@ -722,19 +722,14 @@
 
         // Cache for compiled regex patterns
         const REGEX_PATTERNS = {
-            ipv4: /\b(?:\d{1,3}\.){3}\d{1,3}\b/g,
+            ipv4: /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/g,
             ipv6: /\b(?:[A-F0-9]{1,4}:){7}[A-F0-9]{1,4}\b/gi,
-            domain: /\b(?:[a-z0-9]+\.)+[a-z]{2,}\b/gi,
-            path: /(?:[A-Za-z]:\\|\/)[^\s]*/g,
-            sid: /S-\d-\d+-(\d+-){1,14}\d+/g,
-            account: /(?:user|account):\s*\S+/gi,
-            guid: /\b[A-F0-9]{8}(?:-[A-F0-9]{4}){3}-[A-F0-9]{12}\b/gi,
-            kerberos: /\b(?:krbtgt|TGT|TGS):[^\s]*/gi,
-            mac: /\b([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})\b/g,
-            cloudCreds: /\b((?:AKIA|ASIA)[0-9A-Z]{16}|(?:aws)?_?(?:secret|access)_?key_?id)\b/gi,
-            jwt: /eyJ[A-Za-z0-9-_]+\.eyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+/g,
-            base64: /\b[A-Za-z0-9+/]{32,}={0,2}\b/g,
-            email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g
+            domain: /\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}\b/gi,
+            path: /(?:\/[^\/\s]+)+|(?:[A-Za-z]:\\(?:[^\\\/\s]+\\)*[^\\\/\s]*)/g,
+            sid: /\bS-1-[0-9-]+\b/g,
+            guid: /\{?[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}\}?/gi,
+            email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
+            base64: /\b[A-Za-z0-9+/]{32,}={0,2}\b/g
         };
 
         // Undo/Redo stacks
@@ -842,19 +837,37 @@
                     const processJsonValue = (value) => {
                         if (typeof value === 'string') {
                             let processedValue = value;
+                            let matches = [];
+                            
+                            // First collect all matches
                             Object.entries(REGEX_PATTERNS).forEach(([type, regex]) => {
                                 const checkbox = document.getElementById(`redact${type.charAt(0).toUpperCase() + type.slice(1)}`);
                                 if (checkbox && checkbox.checked) {
-                                    processedValue = processedValue.replace(regex, match => {
-                                        if (previewMode) {
-                                            return `<mark class="sensitive-data" data-type="${type}">${match}</mark>`;
-                                        }
-                                        return useDummyData ? 
-                                            dummyData[`generate${type.charAt(0).toUpperCase() + type.slice(1)}`]() : 
-                                            `[REDACTED-${type.toUpperCase()}]`;
-                                    });
+                                    const typeMatches = [...processedValue.matchAll(regex)].map(match => ({
+                                        type,
+                                        match: match[0],
+                                        index: match.index
+                                    }));
+                                    matches.push(...typeMatches);
                                 }
                             });
+
+                            // Sort matches by index in reverse order to process from end to start
+                            matches.sort((a, b) => b.index - a.index);
+
+                            // Apply replacements
+                            matches.forEach(({type, match, index}) => {
+                                if (previewMode) {
+                                    const replacement = `<mark class="sensitive-data" data-type="${type}">${match}</mark>`;
+                                    processedValue = processedValue.slice(0, index) + replacement + processedValue.slice(index + match.length);
+                                } else {
+                                    const replacement = useDummyData ? 
+                                        dummyData[`generate${type.charAt(0).toUpperCase() + type.slice(1)}`]() : 
+                                        `[REDACTED-${type.toUpperCase()}]`;
+                                    processedValue = processedValue.slice(0, index) + replacement + processedValue.slice(index + match.length);
+                                }
+                            });
+
                             return processedValue;
                         } else if (Array.isArray(value)) {
                             return value.map(item => processJsonValue(item));
@@ -872,21 +885,38 @@
                     return JSON.stringify(processedJson, null, 2);
                 }
             } catch (e) {
-                console.log('Not valid JSON, processing as plain text');
+                console.log('Not valid JSON, processing as plain text:', e);
             }
 
             // Process as plain text if not JSON
+            let matches = [];
+            
+            // First collect all matches
             Object.entries(REGEX_PATTERNS).forEach(([type, regex]) => {
                 const checkbox = document.getElementById(`redact${type.charAt(0).toUpperCase() + type.slice(1)}`);
                 if (checkbox && checkbox.checked) {
-                    processedChunk = processedChunk.replace(regex, match => {
-                        if (previewMode) {
-                            return `<mark class="sensitive-data" data-type="${type}">${match}</mark>`;
-                        }
-                        return useDummyData ? 
-                            dummyData[`generate${type.charAt(0).toUpperCase() + type.slice(1)}`]() : 
-                            `[REDACTED-${type.toUpperCase()}]`;
-                    });
+                    const typeMatches = [...processedChunk.matchAll(regex)].map(match => ({
+                        type,
+                        match: match[0],
+                        index: match.index
+                    }));
+                    matches.push(...typeMatches);
+                }
+            });
+
+            // Sort matches by index in reverse order to process from end to start
+            matches.sort((a, b) => b.index - a.index);
+
+            // Apply replacements
+            matches.forEach(({type, match, index}) => {
+                if (previewMode) {
+                    const replacement = `<mark class="sensitive-data" data-type="${type}">${match}</mark>`;
+                    processedChunk = processedChunk.slice(0, index) + replacement + processedChunk.slice(index + match.length);
+                } else {
+                    const replacement = useDummyData ? 
+                        dummyData[`generate${type.charAt(0).toUpperCase() + type.slice(1)}`]() : 
+                        `[REDACTED-${type.toUpperCase()}]`;
+                    processedChunk = processedChunk.slice(0, index) + replacement + processedChunk.slice(index + match.length);
                 }
             });
 
