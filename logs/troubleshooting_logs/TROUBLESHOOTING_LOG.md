@@ -143,3 +143,25 @@ Redaction functionality was not working due to missing redaction type checkboxes
 - Redaction functionality now working correctly
 - All sensitive data types being properly identified and redacted
 - Preview mode functioning as expected
+
+## 2025-02-03 19:36:51Z - Simplified Redaction Patterns
+
+### Issue Description
+Path detection was causing HTML tag issues and false positives in the JSON log data.
+
+### Changes Made
+1. Temporarily removed path detection functionality
+2. Focused on core sensitive data patterns:
+   - IPv4 and IPv6 addresses
+   - Domain names
+   - Security IDs (SIDs)
+   - GUIDs
+   - Email addresses
+
+### Reason for Change
+Path detection was too aggressive and breaking the JSON structure. By focusing on core patterns first, we can ensure the base functionality works correctly before adding more complex pattern matching.
+
+### Next Steps
+1. Test core patterns thoroughly
+2. Re-implement path detection with more precise rules
+3. Add support for network shares and Windows paths separately
