@@ -746,6 +746,31 @@
             checkbox.addEventListener('change', savePreferences);
         });
 
+        // Initialize redaction options
+        const redactionTypes = {
+            'Ipv4': true,
+            'Ipv6': true,
+            'Domain': true,
+            'Path': true,
+            'Sid': true,
+            'Account': true,
+            'Guid': true,
+            'Kerberos': true,
+            'Mac': true,
+            'CloudCreds': true,
+            'Jwt': true,
+            'Base64': true,
+            'Email': true
+        };
+
+        // Set initial checkbox states
+        Object.keys(redactionTypes).forEach(type => {
+            const checkbox = document.getElementById(`redact${type}`);
+            if (checkbox) {
+                checkbox.checked = redactionTypes[type];
+            }
+        });
+
         // Chunked processing
         async function processInChunks(text, chunkSize = 50000) {
             const chunks = [];
@@ -774,23 +799,23 @@
         }
 
         async function processChunk(chunk) {
-            // Process the chunk with all enabled redaction types
             let processedChunk = chunk;
             const previewMode = document.getElementById('previewMode').checked;
+            const useDummyData = document.getElementById('redactionMode').checked;
 
-            for (const [type, regex] of Object.entries(REGEX_PATTERNS)) {
+            Object.entries(REGEX_PATTERNS).forEach(([type, regex]) => {
                 const checkbox = document.getElementById(`redact${type.charAt(0).toUpperCase() + type.slice(1)}`);
                 if (checkbox && checkbox.checked) {
                     processedChunk = processedChunk.replace(regex, match => {
                         if (previewMode) {
                             return `<span class="preview-highlight" title="Detected ${type}">${match}</span>`;
                         }
-                        return document.getElementById('redactionMode').checked ? 
+                        return useDummyData ? 
                             dummyData[`generate${type.charAt(0).toUpperCase() + type.slice(1)}`]() : 
                             `[REDACTED-${type.toUpperCase()}]`;
                     });
                 }
-            }
+            });
 
             return processedChunk;
         }
