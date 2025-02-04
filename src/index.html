@@ -1289,157 +1289,63 @@
 
         async function processChunk(chunk) {
             const useDummyData = document.getElementById('redactionMode').checked;
-
-            try {
-                // Try to parse as JSON first
-                const isJson = chunk.trim().startsWith('{') && chunk.trim().endsWith('}');
-                if (isJson) {
-                    const jsonObj = JSON.parse(chunk);
-                    
-                    // Process each field in the JSON object
-                    const processJsonValue = (value) => {
-                        if (typeof value === 'string') {
-                            let processedValue = value;
-                            let matches = [];
-                            
-                            // First collect all matches
-                            Object.entries(REGEX_PATTERNS).forEach(([type, regex]) => {
-                                const checkbox = document.getElementById(`redact${type.charAt(0).toUpperCase() + type.slice(1)}`);
-                                if (checkbox && checkbox.checked) {
-                                    const typeMatches = [...processedValue.matchAll(regex)].map(match => ({
-                                        type,
-                                        match: match[0],
-                                        index: match.index,
-                                        length: match[0].length
-                                    }));
-                                    matches.push(...typeMatches);
-                                }
-                            });
-
-                            // Remove overlapping matches
-                            matches = matches.filter((match, index) => {
-                                for (let i = 0; i < matches.length; i++) {
-                                    if (i !== index) {
-                                        const other = matches[i];
-                                        if (match.index < other.index + other.length && 
-                                            other.index < match.index + match.length) {
-                                            // Keep the longer match
-                                            return match.length >= other.length;
-                                        }
-                                    }
-                                }
-                                return true;
-                            });
-
-                            // Sort matches by index in reverse order
-                            matches.sort((a, b) => b.index - a.index);
-
-                            // Apply replacements
-                            matches.forEach(({type, match, index}) => {
-                                const replacement = useDummyData ? 
-                                    dummyData[`generate${type.charAt(0).toUpperCase() + type.slice(1)}`]() : 
-                                    `[REDACTED-${type.toUpperCase()}]`;
-                                processedValue = processedValue.slice(0, index) + replacement + processedValue.slice(index + match.length);
-                            });
-
-                            return processedValue;
-                        } else if (Array.isArray(value)) {
-                            return value.map(item => processJsonValue(item));
-                        } else if (typeof value === 'object' && value !== null) {
-                            const processed = {};
-                            Object.entries(value).forEach(([k, v]) => {
-                                processed[k] = processJsonValue(v);
-                            });
-                            return processed;
-                        }
-                        return value;
-                    };
-
-                    const processedJson = processJsonValue(jsonObj);
-                    return JSON.stringify(processedJson, null, 2);
-                }
-            } catch (e) {
-                console.log('Not valid JSON, processing as plain text:', e);
-            }
-
-            // Process as plain text if not JSON
             let processedChunk = chunk;
-            let matches = [];
-            
-            // First collect all matches
-            Object.entries(REGEX_PATTERNS).forEach(([type, regex]) => {
-                const checkbox = document.getElementById(`redact${type.charAt(0).toUpperCase() + type.slice(1)}`);
-                if (checkbox && checkbox.checked) {
-                    const typeMatches = [...processedChunk.matchAll(regex)].map(match => ({
-                        type,
-                        match: match[0],
-                        index: match.index,
-                        length: match[0].length
-                    }));
-                    matches.push(...typeMatches);
-                }
-            });
 
-            // Remove overlapping matches
-            matches = matches.filter((match, index) => {
-                for (let i = 0; i < matches.length; i++) {
-                    if (i !== index) {
-                        const other = matches[i];
-                        if (match.index < other.index + other.length && 
-                            other.index < match.index + match.length) {
-                            // Keep the longer match
-                            return match.length >= other.length;
+            // Get selected redaction types
+            const redactionTypes = {
+                ip: document.getElementById('redactIP').checked,
+                ipv4: document.getElementById('redactIpv4').checked,
+                ipv6: document.getElementById('redactIpv6').checked,
+                domain: document.getElementById('redactDomain').checked,
+                sid: document.getElementById('redactSid').checked,
+                account: document.getElementById('redactAccount').checked,
+                guid: document.getElementById('redactGuid').checked,
+                kerberos: document.getElementById('redactKerberos').checked,
+                mac: document.getElementById('redactMac').checked,
+                cloudCreds: document.getElementById('redactCloudCreds').checked
+            };
+
+            // Process each redaction type
+            for (const [type, isEnabled] of Object.entries(redactionTypes)) {
+                if (!isEnabled) continue;
+
+                const pattern = REGEX_PATTERNS[type];
+                if (!pattern) continue;
+
+                processedChunk = processedChunk.replace(pattern, (match) => {
+                    if (useDummyData) {
+                        // Call the appropriate dummy data generator function
+                        switch(type) {
+                            case 'ip':
+                                return dummyData.generateIP();
+                            case 'ipv4':
+                                return dummyData.generateIP();
+                            case 'ipv6':
+                                return dummyData.generateIPv6();
+                            case 'domain':
+                                return dummyData.generateDomain();
+                            case 'sid':
+                                return dummyData.generateSID();
+                            case 'account':
+                                return 'USER-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+                            case 'guid':
+                                return dummyData.generateGUID();
+                            case 'kerberos':
+                                return dummyData.generateKerberos();
+                            case 'mac':
+                                return dummyData.generateMAC();
+                            case 'cloudCreds':
+                                return dummyData.generateCloudCreds();
+                            default:
+                                return '[REDACTED]';
                         }
+                    } else {
+                        return '[REDACTED]';
                     }
-                }
-                return true;
-            });
-
-            // Sort matches by index in reverse order
-            matches.sort((a, b) => b.index - a.index);
-
-            // Apply replacements
-            matches.forEach(({type, match, index}) => {
-                const replacement = useDummyData ? 
-                    dummyData[`generate${type.charAt(0).toUpperCase() + type.slice(1)}`]() : 
-                    `[REDACTED-${type.toUpperCase()}]`;
-                processedChunk = processedChunk.slice(0, index) + replacement + processedChunk.slice(index + match.length);
-            });
+                });
+            }
 
             return processedChunk;
-        }
-
-        // Enhanced processText function
-        async function processText() {
-            try {
-                const inputText = document.getElementById('input-text').value;
-                if (!inputText) {
-                    showError('Please enter or upload some text to process');
-                    return;
-                }
-
-                // Show loading state
-                document.getElementById('loadingOverlay').style.display = 'flex';
-                
-                // Process text in chunks
-                const processedText = await processInChunks(inputText);
-                
-                // Update output
-                document.getElementById('output-text').value = processedText;
-                
-                // Update undo/redo buttons
-                updateUndoRedoButtons();
-                
-                // Hide loading state
-                document.getElementById('loadingOverlay').style.display = 'none';
-                
-                // Show success message
-                const mode = document.getElementById('redactionMode').checked ? 'dummy data' : 'redaction';
-                showStatus(`Text processed with ${mode} mode`, 'success');
-            } catch (error) {
-                showError('Error processing text: ' + error.message);
-                document.getElementById('loadingOverlay').style.display = 'none';
-            }
         }
 
         // Undo/Redo functions
@@ -1534,6 +1440,40 @@
             }, 4500);
         }
 
+        // Enhanced processText function
+        async function processText() {
+            try {
+                const inputText = document.getElementById('input-text').value;
+                if (!inputText) {
+                    showError('Please enter or upload some text to process');
+                    return;
+                }
+
+                // Show loading state
+                document.getElementById('loadingOverlay').style.display = 'flex';
+                
+                // Process text in chunks
+                const processedText = await processInChunks(inputText);
+                
+                // Update output
+                document.getElementById('output-text').value = processedText;
+                
+                // Update undo/redo buttons
+                updateUndoRedoButtons();
+                
+                // Hide loading state
+                document.getElementById('loadingOverlay').style.display = 'none';
+                
+                // Show success message
+                const mode = document.getElementById('redactionMode').checked ? 'dummy data' : 'redaction';
+                showStatus(`Text processed with ${mode} mode`, 'success');
+            } catch (error) {
+                showError('Error processing text: ' + error.message);
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+        }
+
+        // Copy to clipboard
         function copyToClipboard() {
             const outputText = document.getElementById('output-text');
             outputText.select();
@@ -1541,12 +1481,14 @@
             alert('Copied to clipboard!');
         }
 
+        // Clear input
         function clearInput() {
             document.getElementById('input-text').value = '';
             document.getElementById('output-text').value = '';
             document.getElementById('sensitive-items-list').innerHTML = '';
         }
 
+        // Download output
         function downloadOutput() {
             const outputText = document.getElementById('output-text').value;
             if (outputText) {
