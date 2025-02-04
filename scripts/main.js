@@ -123,7 +123,6 @@ async function processInChunks(text, chunkSize = CONFIG.CHUNK_SIZE) {
 
 // Event listeners
 document.getElementById('logFile').addEventListener('change', handleFileUpload);
-document.getElementById('redactionMode').addEventListener('change', handleRedactionModeChange);
 
 // Export functions
 function exportResults(format) {
@@ -161,4 +160,23 @@ function downloadFile(content, filename, contentType) {
     a.click();
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
+}
+
+function processText() {
+    const inputText = document.getElementById('input-text').value;
+    if (!inputText) {
+        return;
+    }
+
+    undoStack.push(currentText);
+    redoStack.length = 0;
+    currentText = inputText;
+
+    try {
+        const processedText = processInChunks(inputText);
+        document.getElementById('input-text').value = processedText;
+        updateUndoRedoButtons();
+    } catch (error) {
+        showError(error);
+    }
 }

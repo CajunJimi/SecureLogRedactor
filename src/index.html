@@ -406,75 +406,76 @@
 
         <div class="redaction-controls">
             <h3>Redaction Settings</h3>
-            
-            <div class="redaction-mode">
-                <h4>Redaction Mode</h4>
-                <div class="mode-label">Redacted Text</div>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="redactionMode">
-                    <span class="slider"></span>
+            <div class="redaction-type">
+                <label>
+                    <input type="checkbox" id="redactIP" checked>
+                    IP Addresses (IPv4 & IPv6)
                 </label>
-                <div class="mode-label">Dummy Data</div>
-                <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
-                    Toggle between [REDACTED] placeholders and realistic-looking dummy data
-                </div>
             </div>
-
-            <div class="redaction-types">
-                <h4>Information Types to Redact</h4>
-                <div class="redaction-type">
-                    <input type="checkbox" id="redactIpv4" checked>
-                    <label for="redactIpv4">IPv4 Addresses</label>
-                </div>
-                <div class="redaction-type">
-                    <input type="checkbox" id="redactIpv6" checked>
-                    <label for="redactIpv6">IPv6 Addresses</label>
-                </div>
-                <div class="redaction-type">
-                    <input type="checkbox" id="redactDomain" checked>
-                    <label for="redactDomain">Domain Names & Hostnames</label>
-                </div>
-                <div class="redaction-type">
-                    <input type="checkbox" id="redactSid" checked>
-                    <label for="redactSid">Security IDs (SIDs)</label>
-                </div>
-                <div class="redaction-type">
-                    <input type="checkbox" id="redactAccount" checked>
-                    <label for="redactAccount">Account Names</label>
-                </div>
-                <div class="redaction-type">
-                    <input type="checkbox" id="redactGuid" checked>
-                    <label for="redactGuid">GUIDs & Unique Identifiers</label>
-                </div>
-                <div class="redaction-type">
-                    <input type="checkbox" id="redactKerberos" checked>
-                    <label for="redactKerberos">Kerberos Tickets</label>
-                </div>
-                <div class="redaction-type">
-                    <input type="checkbox" id="redactMac" checked>
-                    <label for="redactMac">MAC Addresses</label>
-                </div>
-                <div class="redaction-type">
-                    <input type="checkbox" id="redactCloudCreds" checked>
-                    <label for="redactCloudCreds">Cloud Credentials</label>
-                </div>
-                <div class="redaction-type">
-                    <input type="checkbox" id="redactJwt" checked>
-                    <label for="redactJwt">JWT Tokens</label>
-                </div>
-                <div class="redaction-type">
-                    <input type="checkbox" id="redactBase64" checked>
-                    <label for="redactBase64">Base64 Encoded Data</label>
-                </div>
-                <div class="redaction-type">
-                    <input type="checkbox" id="redactEmail" checked>
-                    <label for="redactEmail">Email Addresses</label>
-                </div>
+            <div class="redaction-type">
+                <input type="checkbox" id="redactIpv4" checked>
+                <label for="redactIpv4">IPv4 Addresses</label>
             </div>
+            <div class="redaction-type">
+                <input type="checkbox" id="redactIpv6" checked>
+                <label for="redactIpv6">IPv6 Addresses</label>
+            </div>
+            <div class="redaction-type">
+                <input type="checkbox" id="redactDomain" checked>
+                <label for="redactDomain">Domain Names & Hostnames</label>
+            </div>
+            <div class="redaction-type">
+                <input type="checkbox" id="redactSid" checked>
+                <label for="redactSid">Security IDs (SIDs)</label>
+            </div>
+            <div class="redaction-type">
+                <input type="checkbox" id="redactAccount" checked>
+                <label for="redactAccount">Account Names</label>
+            </div>
+            <div class="redaction-type">
+                <input type="checkbox" id="redactGuid" checked>
+                <label for="redactGuid">GUIDs & Unique Identifiers</label>
+            </div>
+            <div class="redaction-type">
+                <input type="checkbox" id="redactKerberos" checked>
+                <label for="redactKerberos">Kerberos Tickets</label>
+            </div>
+            <div class="redaction-type">
+                <input type="checkbox" id="redactMac" checked>
+                <label for="redactMac">MAC Addresses</label>
+            </div>
+            <div class="redaction-type">
+                <input type="checkbox" id="redactCloudCreds" checked>
+                <label for="redactCloudCreds">Cloud Credentials</label>
+            </div>
+            <div class="redaction-type">
+                <input type="checkbox" id="redactJwt" checked>
+                <label for="redactJwt">JWT Tokens</label>
+            </div>
+            <div class="redaction-type">
+                <input type="checkbox" id="redactBase64" checked>
+                <label for="redactBase64">Base64 Encoded Data</label>
+            </div>
+            <div class="redaction-type">
+                <input type="checkbox" id="redactEmail" checked>
+                <label for="redactEmail">Email Addresses</label>
+            </div>
+            <div class="actions">
+                <button onclick="processText()" class="primary-button">Redact Text</button>
+                <button onclick="clearInput()" class="secondary-button">Clear</button>
+            </div>
+        </div>
 
-            <div class="preview-mode">
-                <input type="checkbox" id="previewMode">
-                <label for="previewMode">Preview Mode (Highlight sensitive data)</label>
+        <div class="redaction-mode">
+            <h4>Redaction Mode</h4>
+            <div class="mode-label">Redacted Text</div>
+            <label class="toggle-switch">
+                <input type="checkbox" id="redactionMode">
+                <span class="slider"></span>
+            </label>
+            <div class="mode-label">Dummy Data</div>
+            <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                Toggle between [REDACTED] placeholders and realistic-looking dummy data
             </div>
         </div>
 
@@ -826,7 +827,6 @@
         }
 
         async function processChunk(chunk) {
-            const previewMode = document.getElementById('previewMode').checked;
             const useDummyData = document.getElementById('redactionMode').checked;
 
             try {
@@ -875,15 +875,10 @@
 
                             // Apply replacements
                             matches.forEach(({type, match, index}) => {
-                                if (previewMode) {
-                                    const replacement = `<mark class="sensitive-data" data-type="${type}">${match}</mark>`;
-                                    processedValue = processedValue.slice(0, index) + replacement + processedValue.slice(index + match.length);
-                                } else {
-                                    const replacement = useDummyData ? 
-                                        dummyData[`generate${type.charAt(0).toUpperCase() + type.slice(1)}`]() : 
-                                        `[REDACTED-${type.toUpperCase()}]`;
-                                    processedValue = processedValue.slice(0, index) + replacement + processedValue.slice(index + match.length);
-                                }
+                                const replacement = useDummyData ? 
+                                    dummyData[`generate${type.charAt(0).toUpperCase() + type.slice(1)}`]() : 
+                                    `[REDACTED-${type.toUpperCase()}]`;
+                                processedValue = processedValue.slice(0, index) + replacement + processedValue.slice(index + match.length);
                             });
 
                             return processedValue;
@@ -944,15 +939,10 @@
 
             // Apply replacements
             matches.forEach(({type, match, index}) => {
-                if (previewMode) {
-                    const replacement = `<mark class="sensitive-data" data-type="${type}">${match}</mark>`;
-                    processedChunk = processedChunk.slice(0, index) + replacement + processedChunk.slice(index + match.length);
-                } else {
-                    const replacement = useDummyData ? 
-                        dummyData[`generate${type.charAt(0).toUpperCase() + type.slice(1)}`]() : 
-                        `[REDACTED-${type.toUpperCase()}]`;
-                    processedChunk = processedChunk.slice(0, index) + replacement + processedChunk.slice(index + match.length);
-                }
+                const replacement = useDummyData ? 
+                    dummyData[`generate${type.charAt(0).toUpperCase() + type.slice(1)}`]() : 
+                    `[REDACTED-${type.toUpperCase()}]`;
+                processedChunk = processedChunk.slice(0, index) + replacement + processedChunk.slice(index + match.length);
             });
 
             return processedChunk;
