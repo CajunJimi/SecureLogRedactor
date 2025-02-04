@@ -858,12 +858,39 @@
             return printableChars.length / text.length < 0.1; // Allow 10% non-printable chars
         }
 
-        // Show error message with enhanced styling
+        // Error handling and status functions
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('statusMessage');
+            if (!statusDiv) {
+                console.warn('Status message element not found');
+                return;
+            }
+            statusDiv.textContent = message;
+            statusDiv.className = `status-message ${type}`;
+            statusDiv.style.display = 'block';
+            console.log(`Status [${type}]:`, message);
+
+            // Auto-hide after 5 seconds for non-error messages
+            if (type !== 'error') {
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Enhanced error handling
         function showError(message) {
             const errorMessage = document.getElementById('errorMessage');
+            if (!errorMessage) {
+                console.error('Error message element not found');
+                return;
+            }
             errorMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
             errorMessage.className = 'error-message fade-in';
             errorMessage.style.display = 'block';
+            
+            // Also log to console for debugging
+            console.error('Error:', message);
             
             setTimeout(() => {
                 errorMessage.className = 'error-message fade-out';
@@ -1326,9 +1353,16 @@
         // Error handling
         function showError(message) {
             const errorMessage = document.getElementById('errorMessage');
+            if (!errorMessage) {
+                console.error('Error message element not found');
+                return;
+            }
             errorMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
             errorMessage.className = 'error-message fade-in';
             errorMessage.style.display = 'block';
+            
+            // Also log to console for debugging
+            console.error('Error:', message);
             
             setTimeout(() => {
                 errorMessage.className = 'error-message fade-out';
