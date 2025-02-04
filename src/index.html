@@ -160,17 +160,18 @@
         }
 
         .loading-overlay {
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
             z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
         }
 
         .spinner {
@@ -383,11 +384,61 @@
             font-size: 12px;
             white-space: nowrap;
         }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-modal:hover {
+            color: #000;
+        }
+
+        .info-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+
+        .info-button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>SecureLog Redaction Tool</h1>
+        <button class="info-button" onclick="openInfoModal()">How It Works</button>
         <div class="security-info">
             <h3>Security Information</h3>
             <p>This tool helps redact sensitive information from logs before processing. All processing is done locally in your browser.</p>
@@ -521,6 +572,29 @@
                         <button onclick="copyToClipboard()">Copy to Clipboard</button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Information Modal -->
+    <div id="infoModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeInfoModal()">&times;</span>
+            <h2>How SecureLog Redactor Works</h2>
+            <div class="modal-body">
+                <h3>Privacy & Security</h3>
+                <ul>
+                    <li><strong>100% Local Processing:</strong> All data processing occurs entirely in your browser. No data is ever sent to external servers.</li>
+                    <li><strong>Zero Data Storage:</strong> We don't store any of your data. Once you close the browser tab, all data is cleared.</li>
+                    <li><strong>Offline Capable:</strong> The tool works even without an internet connection after initial load.</li>
+                </ul>
+                
+                <h3>Technical Details</h3>
+                <ul>
+                    <li><strong>Browser-Based:</strong> Uses modern browser technologies for secure, local processing.</li>
+                    <li><strong>Pattern Recognition:</strong> Advanced algorithms identify sensitive data patterns.</li>
+                    <li><strong>Real-time Processing:</strong> Instant redaction as you type or upload files.</li>
+                </ul>
             </div>
         </div>
     </div>
@@ -1088,6 +1162,22 @@
 
         // Initial connection check
         checkConnection();
+
+        // Modal functions
+        function openInfoModal() {
+            document.getElementById('infoModal').style.display = 'block';
+        }
+
+        function closeInfoModal() {
+            document.getElementById('infoModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('infoModal')) {
+                closeInfoModal();
+            }
+        }
     </script>
 </body>
 </html>
