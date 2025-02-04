@@ -968,71 +968,210 @@
 
         // Dummy data generators
         const dummyData = {
+            // Enhanced IP generation with common ranges
             generateIP: () => {
-                const ip = Array.from({length: 4}, () => Math.floor(Math.random() * 256)).join('.');
-                return `192.168.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}`;
+                const ranges = [
+                    '10.0.0',     // Private network
+                    '172.16.0',   // Private network
+                    '192.168.0',  // Private network
+                    '203.0.113',  // Documentation
+                    '198.51.100'  // Documentation
+                ];
+                const range = ranges[Math.floor(Math.random() * ranges.length)];
+                return `${range}.${Math.floor(Math.random() * 256)}`;
             },
+
+            // Enhanced IPv6 with common prefixes
             generateIPv6: () => {
-                return Array.from({length: 8}, () => 
-                    Math.floor(Math.random() * 65536).toString(16).padStart(4, '0')
-                ).join(':');
-            },
-            generateDomain: () => {
-                const domains = ['example.com', 'test.local', 'internal.net', 'dev.org'];
-                const prefixes = ['srv', 'host', 'web', 'db', 'app'];
+                const prefixes = [
+                    'fd00',  // Unique Local Address
+                    'fe80',  // Link Local
+                    '2001',  // Global Unicast
+                    '2606'   // Documentation
+                ];
                 const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-                const domain = domains[Math.floor(Math.random() * domains.length)];
-                return `${prefix}-${Math.floor(Math.random() * 999)}.${domain}`;
+                return `${prefix}:${Array.from({length: 7}, () => 
+                    Math.floor(Math.random() * 65536).toString(16).padStart(4, '0')
+                ).join(':')}`;
             },
+
+            // Enhanced domain with realistic TLDs and subdomains
+            generateDomain: () => {
+                const tlds = ['com', 'net', 'org', 'local', 'internal', 'corp'];
+                const companies = ['contoso', 'acme', 'example', 'test'];
+                const services = ['web', 'mail', 'db', 'auth', 'api', 'app'];
+                const regions = ['us', 'eu', 'asia'];
+                const company = companies[Math.floor(Math.random() * companies.length)];
+                const service = services[Math.floor(Math.random() * services.length)];
+                const region = regions[Math.floor(Math.random() * regions.length)];
+                const tld = tlds[Math.floor(Math.random() * tlds.length)];
+                return `${service}-${region}.${company}.${tld}`;
+            },
+
+            // Enhanced paths with realistic directory structures
             generatePath: () => {
-                const paths = ['/var/log', '/etc', '/usr/local', 'C:\\Program Files', 'D:\\Data'];
-                const files = ['config.xml', 'data.db', 'app.log', 'system.dat'];
+                const winPaths = [
+                    'C:\\Windows\\System32\\config',
+                    'C:\\Program Files\\Common Files',
+                    'C:\\Users\\Administrator\\AppData',
+                    'D:\\Logs\\Application',
+                    'E:\\Backup\\System'
+                ];
+                const unixPaths = [
+                    '/var/log/syslog',
+                    '/etc/security',
+                    '/usr/local/bin',
+                    '/opt/application/logs',
+                    '/home/user/.config'
+                ];
+                const paths = [...winPaths, ...unixPaths];
+                const files = [
+                    'Security.evtx',
+                    'Application.log',
+                    'access_log',
+                    'error.log',
+                    'auth.log',
+                    'system.log'
+                ];
                 const path = paths[Math.floor(Math.random() * paths.length)];
                 const file = files[Math.floor(Math.random() * files.length)];
-                return `${path}\\${file}`;
+                return path.includes('\\') ? `${path}\\${file}` : `${path}/${file}`;
             },
+
+            // Enhanced SID with realistic structure
             generateSID: () => {
-                const parts = Array.from({length: 6}, () => Math.floor(Math.random() * 100000));
-                return `S-1-5-21-${parts.join('-')}`;
+                const authorities = ['5', '12', '15', '21'];
+                const domains = ['500', '501', '502', '512', '513', '519'];
+                const users = ['1000', '1001', '1002', '1003', '1004'];
+                return `S-1-${authorities[Math.floor(Math.random() * authorities.length)]}-21-${
+                    Math.floor(Math.random() * 4294967296)}-${
+                    Math.floor(Math.random() * 4294967296)}-${
+                    Math.floor(Math.random() * 4294967296)}-${
+                    domains[Math.floor(Math.random() * domains.length)]}-${
+                    users[Math.floor(Math.random() * users.length)]}`;
             },
+
+            // Enhanced GUID generation
             generateGUID: () => {
                 const hex = () => Math.floor(Math.random() * 16).toString(16);
                 const block = (len) => Array.from({length: len}, hex).join('');
-                return `${block(8)}-${block(4)}-${block(4)}-${block(4)}-${block(12)}`;
+                return `${block(8)}-${block(4)}-4${block(3)}-${
+                    '89ab'[Math.floor(Math.random() * 4)]
+                }${block(3)}-${block(12)}`;
             },
+
+            // Enhanced Kerberos with realistic principals
             generateKerberos: () => {
-                const services = ['HTTP', 'MSSQL', 'LDAP'];
+                const services = ['HTTP', 'MSSQL', 'LDAP', 'HOST', 'CIFS', 'NFS'];
+                const servers = ['DC01', 'APP01', 'WEB01', 'DB01', 'FILE01'];
+                const realms = ['CORP.LOCAL', 'CONTOSO.COM', 'EXAMPLE.NET'];
                 const service = services[Math.floor(Math.random() * services.length)];
-                return `krbtgt/${service}@EXAMPLE.COM`;
+                const server = servers[Math.floor(Math.random() * servers.length)];
+                const realm = realms[Math.floor(Math.random() * realms.length)];
+                return `${service}/${server}.${realm.toLowerCase()}@${realm}`;
             },
+
+            // Enhanced MAC with common vendor prefixes
             generateMAC: () => {
-                const mac = Array.from({length: 6}, () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join(':');
-                return mac;
+                const vendors = [
+                    '00:0C:29', // VMware
+                    '00:50:56', // VMware
+                    '00:1A:A0', // Dell
+                    '00:16:3E', // Xen
+                    'EC:F4:BB'  // Microsoft
+                ];
+                const vendor = vendors[Math.floor(Math.random() * vendors.length)];
+                const device = Array.from({length: 3}, () => 
+                    Math.floor(Math.random() * 256).toString(16).padStart(2, '0')
+                ).join(':');
+                return `${vendor}:${device}`;
             },
+
+            // Enhanced cloud credentials with realistic formats
             generateCloudCreds: () => {
-                const providers = ['AWS', 'Azure', 'GCP'];
-                const provider = providers[Math.floor(Math.random() * providers.length)];
-                return `${provider} Access Key ID: ${Math.floor(Math.random() * 1000000000)}`;
+                const types = {
+                    'AWS': {
+                        accessKey: 'AKIA' + Array.from({length: 16}, () => 
+                            '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 36)]
+                        ).join(''),
+                        secretKey: Array.from({length: 40}, () => 
+                            '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/'[Math.floor(Math.random() * 64)]
+                        ).join('')
+                    },
+                    'Azure': {
+                        appId: Array.from({length: 8}, () => Math.floor(Math.random() * 16).toString(16)).join('') + '-' +
+                               Array.from({length: 4}, () => Math.floor(Math.random() * 16).toString(16)).join('') + '-' +
+                               Array.from({length: 4}, () => Math.floor(Math.random() * 16).toString(16)).join('') + '-' +
+                               Array.from({length: 4}, () => Math.floor(Math.random() * 16).toString(16)).join('') + '-' +
+                               Array.from({length: 12}, () => Math.floor(Math.random() * 16).toString(16)).join(''),
+                        secret: Array.from({length: 44}, () => 
+                            '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'[Math.floor(Math.random() * 64)]
+                        ).join('')
+                    },
+                    'GCP': {
+                        serviceAccount: `${Math.floor(Math.random() * 1000000)}@project-${
+                            Math.floor(Math.random() * 100000)}.iam.gserviceaccount.com`,
+                        key: 'ya29.' + Array.from({length: 100}, () => 
+                            '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'[Math.floor(Math.random() * 64)]
+                        ).join('')
+                    }
+                };
+                const provider = Object.keys(types)[Math.floor(Math.random() * Object.keys(types).length)];
+                const creds = types[provider];
+                switch(provider) {
+                    case 'AWS':
+                        return `AWS_ACCESS_KEY_ID=${creds.accessKey}\nAWS_SECRET_ACCESS_KEY=${creds.secretKey}`;
+                    case 'Azure':
+                        return `AZURE_CLIENT_ID=${creds.appId}\nAZURE_CLIENT_SECRET=${creds.secret}`;
+                    case 'GCP':
+                        return `GCP_SERVICE_ACCOUNT=${creds.serviceAccount}\nGCP_KEY=${creds.key}`;
+                }
             },
-            generateJWT: () => {
-                const header = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
-                const payload = 'eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaGFuIjoiMjMwfQ';
-                const signature = 'SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
-                return `${header}.${payload}.${signature}`;
-            },
-            generateBase64: () => {
-                const base64 = 'VGhlIHF1aWNrIGJyb3duIGZveA==';
-                return base64;
-            },
-            generateEmail: () => {
-                const domains = ['example.com', 'test.local', 'internal.net', 'dev.org'];
-                const localParts = ['john', 'jane', 'admin', 'user'];
-                const domain = domains[Math.floor(Math.random() * domains.length)];
-                const localPart = localParts[Math.floor(Math.random() * localParts.length)];
-                return `${localPart}@${domain}`;
+
+            // Generate realistic log entries
+            generateLogEntry: () => {
+                const logTypes = [
+                    'windowsEvent',
+                    'syslog',
+                    'apache',
+                    'iis',
+                    'auth'
+                ];
+                const type = logTypes[Math.floor(Math.random() * logTypes.length)];
+                const timestamp = new Date().toISOString();
+                const ip = dummyData.generateIP();
+                const domain = dummyData.generateDomain();
+                const user = `user${Math.floor(Math.random() * 1000)}`;
+                
+                switch(type) {
+                    case 'windowsEvent':
+                        return `<Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing' Guid='{${dummyData.generateGUID()}'/><EventID>4624</EventID><Version>0</Version><Level>0</Level><Task>12544</Task><Opcode>0</Opcode><Keywords>0x8020000000000000</Keywords><TimeCreated SystemTime='${timestamp}'/><EventRecordID>${Math.floor(Math.random() * 1000000)}</EventRecordID><Correlation ActivityID='{${dummyData.generateGUID()}}'/><Execution ProcessID='${Math.floor(Math.random() * 1000)}' ThreadID='${Math.floor(Math.random() * 1000)}'/><Channel>Security</Channel><Computer>${domain}</Computer></System><EventData><Data Name='SubjectUserSid'>${dummyData.generateSID()}</Data><Data Name='SubjectUserName'>${user}</Data><Data Name='SubjectDomainName'>DOMAIN</Data><Data Name='SubjectLogonId'>0x${Math.floor(Math.random() * 1000000).toString(16)}</Data><Data Name='TargetUserSid'>${dummyData.generateSID()}</Data><Data Name='TargetUserName'>${user}</Data><Data Name='TargetDomainName'>DOMAIN</Data><Data Name='TargetLogonId'>0x${Math.floor(Math.random() * 1000000).toString(16)}</Data><Data Name='LogonType'>3</Data><Data Name='LogonProcessName'>Kerberos</Data><Data Name='AuthenticationPackageName'>Kerberos</Data><Data Name='WorkstationName'>${domain}</Data><Data Name='LogonGuid'>{${dummyData.generateGUID()}}</Data><Data Name='TransmittedServices'>-</Data><Data Name='LmPackageName'>-</Data><Data Name='KeyLength'>0</Data><Data Name='ProcessId'>0x${Math.floor(Math.random() * 1000000).toString(16)}</Data><Data Name='ProcessName'>-</Data><Data Name='IpAddress'>${ip}</Data><Data Name='IpPort'>${Math.floor(Math.random() * 65536)}</Data></EventData></Event>`;
+                    
+                    case 'syslog':
+                        const facility = Math.floor(Math.random() * 23);
+                        const severity = Math.floor(Math.random() * 7);
+                        const pid = Math.floor(Math.random() * 100000);
+                        return `<${facility * 8 + severity}>${timestamp} ${domain} ${user}[${pid}]: session opened for user ${user} by (uid=0)`;
+                    
+                    case 'apache':
+                        const status = [200, 301, 302, 304, 400, 401, 403, 404, 500][Math.floor(Math.random() * 9)];
+                        const size = Math.floor(Math.random() * 1000000);
+                        const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
+                        return `${ip} - ${user} [${timestamp}] "GET /api/v1/users HTTP/1.1" ${status} ${size} "https://${domain}/" "${userAgent}"`;
+                    
+                    case 'iis':
+                        const method = ['GET', 'POST', 'PUT', 'DELETE'][Math.floor(Math.random() * 4)];
+                        const uri = ['/api/v1/users', '/login', '/logout', '/dashboard'][Math.floor(Math.random() * 4)];
+                        return `${timestamp} ${ip} ${method} ${uri} 443 ${user} ${domain} 80 200 0 0 ${Math.floor(Math.random() * 1000)} ${Math.floor(Math.random() * 1000)} "Mozilla/5.0+(Windows+NT+10.0;+Win64;+x64)"`;
+                    
+                    case 'auth':
+                        const actions = ['Successful login', 'Failed login attempt', 'Password change', 'Account locked'];
+                        const action = actions[Math.floor(Math.random() * actions.length)];
+                        return `${timestamp} auth: ${action} for user ${user} from ${ip} on ${domain}`;
+                }
             }
         };
-
+        
         // Cache for compiled regex patterns
         const REGEX_PATTERNS = {
             ipv4: /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/g,
