@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SecureLog Redaction Tool</title>
     <script src="https://unpkg.com/compromise@14.10.0"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         /* Basic reset and modern styling */
         * {
@@ -408,6 +409,50 @@
             position: relative;
         }
 
+        .modal-body h3 {
+            display: flex;
+            align-items: center;
+            margin: 20px 0 15px 0;
+            color: #2c3e50;
+        }
+
+        .modal-body h3 i {
+            margin-right: 10px;
+            color: #007bff;
+        }
+
+        .modal-body ul {
+            list-style: none;
+            padding-left: 35px;
+        }
+
+        .modal-body li {
+            margin: 10px 0;
+            position: relative;
+        }
+
+        .modal-body li i {
+            position: absolute;
+            left: -25px;
+            top: 3px;
+            color: #28a745;
+            font-size: 0.9em;
+        }
+
+        .modal h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+
+        .modal h2 i {
+            margin-right: 10px;
+            color: #007bff;
+        }
+
         .close-modal {
             color: #aaa;
             float: right;
@@ -580,20 +625,20 @@
     <div id="infoModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeInfoModal()">&times;</span>
-            <h2>How SecureLog Redactor Works</h2>
+            <h2><i class="fas fa-shield-alt"></i>How SecureLog Redactor Works</h2>
             <div class="modal-body">
-                <h3>Privacy & Security</h3>
+                <h3><i class="fas fa-lock"></i>Privacy & Security</h3>
                 <ul>
-                    <li><strong>100% Local Processing:</strong> All data processing occurs entirely in your browser. No data is ever sent to external servers.</li>
-                    <li><strong>Zero Data Storage:</strong> We don't store any of your data. Once you close the browser tab, all data is cleared.</li>
-                    <li><strong>Offline Capable:</strong> The tool works even without an internet connection after initial load.</li>
+                    <li><i class="fas fa-check-circle"></i><strong>100% Local Processing:</strong> All data processing occurs entirely in your browser. No data is ever sent to external servers.</li>
+                    <li><i class="fas fa-check-circle"></i><strong>Zero Data Storage:</strong> We don't store any of your data. Once you close the browser tab, all data is cleared.</li>
+                    <li><i class="fas fa-check-circle"></i><strong>Offline Capable:</strong> The tool works even without an internet connection after initial load.</li>
                 </ul>
                 
-                <h3>Technical Details</h3>
+                <h3><i class="fas fa-cogs"></i>Technical Details</h3>
                 <ul>
-                    <li><strong>Browser-Based:</strong> Uses modern browser technologies for secure, local processing.</li>
-                    <li><strong>Pattern Recognition:</strong> Advanced algorithms identify sensitive data patterns.</li>
-                    <li><strong>Real-time Processing:</strong> Instant redaction as you type or upload files.</li>
+                    <li><i class="fas fa-check-circle"></i><strong>Browser-Based:</strong> Uses modern browser technologies for secure, local processing.</li>
+                    <li><i class="fas fa-check-circle"></i><strong>Pattern Recognition:</strong> Advanced algorithms identify sensitive data patterns.</li>
+                    <li><i class="fas fa-check-circle"></i><strong>Real-time Processing:</strong> Instant redaction as you type or upload files.</li>
                 </ul>
             </div>
         </div>
