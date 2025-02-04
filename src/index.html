@@ -274,20 +274,31 @@
         .redaction-mode {
             margin: 20px 0;
             padding: 15px;
-            background-color: #e3f2fd;
+            border: 1px solid #ddd;
             border-radius: 5px;
-            border: 1px solid #bbdefb;
+            background-color: #f8f9fa;
         }
 
-        .toggle-switch {
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .toggle-labels {
+            display: flex;
+            gap: 20px;
+        }
+
+        .switch {
             position: relative;
             display: inline-block;
             width: 60px;
             height: 34px;
-            margin-left: 10px;
         }
 
-        .toggle-switch input {
+        .switch input {
             opacity: 0;
             width: 0;
             height: 0;
@@ -302,7 +313,6 @@
             bottom: 0;
             background-color: #ccc;
             transition: .4s;
-            border-radius: 34px;
         }
 
         .slider:before {
@@ -314,28 +324,26 @@
             bottom: 4px;
             background-color: white;
             transition: .4s;
-            border-radius: 50%;
         }
 
         input:checked + .slider {
             background-color: #2196F3;
         }
 
+        input:focus + .slider {
+            box-shadow: 0 0 1px #2196F3;
+        }
+
         input:checked + .slider:before {
             transform: translateX(26px);
         }
 
-        .mode-label {
-            display: inline-block;
-            margin-right: 10px;
-            vertical-align: middle;
+        .slider.round {
+            border-radius: 34px;
         }
 
-        .preview-highlight {
-            background-color: #fff3cd;
-            padding: 2px 4px;
-            border-radius: 2px;
-            cursor: help;
+        .slider.round:before {
+            border-radius: 50%;
         }
 
         .toolbar {
@@ -648,17 +656,15 @@
         <div class="redaction-mode">
             <h3>Redaction Mode</h3>
             <div class="toggle-container">
-                <span>Redacted Text</span>
-                <label class="toggle-switch">
+                <label class="switch">
                     <input type="checkbox" id="redactionMode">
                     <span class="slider round"></span>
                 </label>
-                <span>Dummy Data</span>
+                <div class="toggle-labels">
+                    <span>Redacted Text</span>
+                    <span>Dummy Data</span>
+                </div>
             </div>
-            <p class="mode-description">Toggle between [REDACTED] placeholders and realistic-looking dummy data</p>
-            <button class="redact-button" onclick="processText()">
-                <i class="fas fa-shield-alt"></i> Redact Now
-            </button>
         </div>
 
         <div class="toolbar">
@@ -1405,23 +1411,35 @@
 
         // Enhanced processText function
         async function processText() {
-            const input = document.getElementById('input-text').value;
-            
-            // Input validation
-            if (input.length > 10000000) { // 10MB limit
-                showError('Input text is too large. Please reduce the size.');
-                return;
-            }
+            try {
+                const inputText = document.getElementById('input-text').value;
+                if (!inputText) {
+                    showError('Please enter or upload some text to process');
+                    return;
+                }
 
-            // Save for undo
-            undoStack.push(currentText);
-            redoStack.length = 0;
-            
-            const processedText = await processInChunks(input);
-            currentText = processedText;
-            
-            document.getElementById('output-text').value = processedText;
-            updateUndoRedoButtons();
+                // Show loading state
+                document.getElementById('loadingOverlay').style.display = 'flex';
+                
+                // Process text in chunks
+                const processedText = await processInChunks(inputText);
+                
+                // Update output
+                document.getElementById('output-text').value = processedText;
+                
+                // Update undo/redo buttons
+                updateUndoRedoButtons();
+                
+                // Hide loading state
+                document.getElementById('loadingOverlay').style.display = 'none';
+                
+                // Show success message
+                const mode = document.getElementById('redactionMode').checked ? 'dummy data' : 'redaction';
+                showStatus(`Text processed with ${mode} mode`, 'success');
+            } catch (error) {
+                showError('Error processing text: ' + error.message);
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
         }
 
         // Undo/Redo functions
@@ -1546,8 +1564,20 @@
 
         // Add event listener for redaction mode toggle
         document.getElementById('redactionMode').addEventListener('change', function() {
-            if (document.getElementById('input-text').value) {
+            const useDummyData = this.checked;
+            const inputText = document.getElementById('input-text').value;
+            
+            if (inputText) {
+                // Store current text before processing
+                if (undoStack.length === 0) {
+                    undoStack.push(inputText);
+                }
+                
+                // Process text with new mode
                 processText();
+                
+                // Show status message
+                showStatus(useDummyData ? 'Switched to dummy data mode' : 'Switched to redaction mode', 'info');
             }
         });
 
