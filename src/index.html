@@ -253,6 +253,24 @@
             display: none;
         }
 
+        .error-message.fade-in {
+            animation: fadeIn 0.5s;
+        }
+
+        .error-message.fade-out {
+            animation: fadeOut 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
         .redaction-mode {
             margin: 20px 0;
             padding: 15px;
@@ -722,49 +740,137 @@
         const CONFIG = {
             MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
             CHUNK_SIZE: 50000, // 50KB chunks
-            ALLOWED_EXTENSIONS: ['.log', '.txt']
+            ALLOWED_EXTENSIONS: ['.log', '.txt'],
+            MAX_FILES_PER_MINUTE: 10,
+            MAX_CONTENT_LENGTH: 50 * 1024 * 1024, // 50MB total
+            MIME_TYPES: ['text/plain', 'application/log', 'text/x-log']
         };
 
-        // File validation
-        function validateFile(file) {
+        // Rate limiting
+        const rateLimit = {
+            count: 0,
+            lastReset: Date.now(),
+            
+            check() {
+                const now = Date.now();
+                if (now - this.lastReset > 60000) { // 1 minute
+                    this.count = 0;
+                    this.lastReset = now;
+                }
+                if (this.count >= CONFIG.MAX_FILES_PER_MINUTE) {
+                    throw new Error('Too many files processed. Please wait a minute.');
+                }
+                this.count++;
+            },
+
+            reset() {
+                this.count = 0;
+                this.lastReset = Date.now();
+            }
+        };
+
+        // Memory management
+        const memoryManager = {
+            checkMemory() {
+                if (performance && performance.memory) {
+                    const usedHeap = performance.memory.usedJSHeapSize;
+                    const heapLimit = performance.memory.jsHeapSizeLimit;
+                    if (usedHeap > heapLimit * 0.8) {
+                        throw new Error('Memory usage too high. Please try a smaller file.');
+                    }
+                }
+            },
+
+            estimateTextSize(text) {
+                // Rough estimate: 2 bytes per character + overhead
+                return text.length * 2;
+            }
+        };
+
+        // Enhanced file validation
+        async function validateFile(file) {
             if (!file) {
                 throw new Error('Please select a file');
             }
 
+            // Check rate limit
+            rateLimit.check();
+
+            // Size validation
             if (file.size > CONFIG.MAX_FILE_SIZE) {
-                throw new Error('File size exceeds 10MB limit');
+                throw new Error(`File size exceeds ${CONFIG.MAX_FILE_SIZE / (1024 * 1024)}MB limit`);
             }
 
+            // Extension validation
             const extension = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
             if (!CONFIG.ALLOWED_EXTENSIONS.includes(extension)) {
                 throw new Error('Invalid file type. Please upload .log or .txt files only');
             }
+
+            // MIME type validation
+            if (!CONFIG.MIME_TYPES.includes(file.type) && file.type !== '') {
+                throw new Error('Invalid file type. Please upload text files only');
+            }
+
+            // Content validation
+            try {
+                const firstChunk = await readFileChunk(file, 1024); // Read first 1KB
+                if (!isValidTextContent(firstChunk)) {
+                    throw new Error('File contains invalid or binary content');
+                }
+            } catch (error) {
+                throw new Error('Error validating file content: ' + error.message);
+            }
+
+            // Memory check
+            memoryManager.checkMemory();
         }
 
-        // Show error message
+        // Helper function to read file chunk
+        function readFileChunk(file, size) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                const blob = file.slice(0, size);
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = e => reject(e);
+                reader.readAsText(blob);
+            });
+        }
+
+        // Helper function to validate text content
+        function isValidTextContent(text) {
+            // Check for common binary file signatures
+            const binarySignatures = [
+                '\u0000', // Null byte
+                '\uFFFF', // Unicode BOM
+                '\u7F45', // ELF header
+                '\u4D5A'  // DOS MZ header
+            ];
+            
+            for (const signature of binarySignatures) {
+                if (text.includes(signature)) {
+                    return false;
+                }
+            }
+
+            // Check if text is mostly printable characters
+            const printableChars = text.replace(/[\x20-\x7E\n\r\t]/g, '');
+            return printableChars.length / text.length < 0.1; // Allow 10% non-printable chars
+        }
+
+        // Show error message with enhanced styling
         function showError(message) {
             const errorMessage = document.getElementById('errorMessage');
-            errorMessage.textContent = message;
+            errorMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+            errorMessage.className = 'error-message fade-in';
             errorMessage.style.display = 'block';
+            
             setTimeout(() => {
-                errorMessage.style.display = 'none';
-            }, 5000);
-        }
-
-        // Error handling and status functions
-        function showStatus(message, type = 'info') {
-            const statusDiv = document.getElementById('statusMessage');
-            statusDiv.textContent = message;
-            statusDiv.className = `status-message ${type}`;
-            statusDiv.style.display = 'block';
-            console.log(`Status [${type}]:`, message);
-        }
-
-        function showError(error) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = error.message || 'An error occurred';
-            errorDiv.style.display = 'block';
-            console.error('Error:', error);
+                errorMessage.className = 'error-message fade-out';
+                setTimeout(() => {
+                    errorMessage.style.display = 'none';
+                }, 500);
+            }, 4500);
         }
 
         // File handling
@@ -782,7 +888,7 @@
                 errorMessage.style.display = 'none';
                 fileInfo.textContent = '';
 
-                validateFile(file);
+                await validateFile(file);
                 loadingOverlay.style.display = 'flex';
                 fileInfo.textContent = `Processing ${file.name}...`;
 
@@ -1220,11 +1326,16 @@
         // Error handling
         function showError(message) {
             const errorMessage = document.getElementById('errorMessage');
-            errorMessage.textContent = message;
+            errorMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+            errorMessage.className = 'error-message fade-in';
             errorMessage.style.display = 'block';
+            
             setTimeout(() => {
-                errorMessage.style.display = 'none';
-            }, 5000);
+                errorMessage.className = 'error-message fade-out';
+                setTimeout(() => {
+                    errorMessage.style.display = 'none';
+                }, 500);
+            }, 4500);
         }
 
         function copyToClipboard() {
